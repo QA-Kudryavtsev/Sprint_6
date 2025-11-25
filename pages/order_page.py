@@ -1,67 +1,95 @@
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from .base_page import BasePage
+from locators.order_page_locators import OrderPageLocators
 import allure
 
 
 class OrderPage(BasePage):
 
- 
-    TOP_ORDER_BUTTON = (By.CSS_SELECTOR, "button.Button_Button__ra12g")
-    BOTTOM_ORDER_BUTTON = (By.CSS_SELECTOR, "button.Button_Button__ra12g.Button_Middle__1CSJM")
-    INPUT_NAME = (By.CSS_SELECTOR, "input[placeholder='* Имя']")
-    INPUT_LASTNAME = (By.CSS_SELECTOR, "input[placeholder='* Фамилия']")
-    INPUT_ADDRESS = (By.CSS_SELECTOR, "input[placeholder='* Адрес: куда привезти заказ']")
-    INPUT_METRO = (By.CSS_SELECTOR, "input[placeholder='* Станция метро']")
-    METRO_OPTION = (By.CSS_SELECTOR, "div.select-search__select ul li")
-    INPUT_PHONE = (By.CSS_SELECTOR, "input[placeholder='* Телефон: на него позвонит курьер']")
-    NEXT_BUTTON = (By.CSS_SELECTOR, "button.Button_Button__ra12g.Button_Middle__1CSJM")
-    INPUT_DATE = (By.CSS_SELECTOR, "input[placeholder='* Когда привезти самокат']")
-    BODY = (By.CSS_SELECTOR, "body")
-    RENT_DROPDOWN = (By.CLASS_NAME, "Dropdown-control")
-    RENT_OPTIONS = (By.CLASS_NAME, "Dropdown-option")
-    COLOR_BLACK = (By.ID, "black")
-    COLOR_GREY = (By.ID, "grey")
-    ORDER_BUTTON = (By.CSS_SELECTOR, "button.Button_Button__ra12g.Button_Middle__1CSJM")
-    YES_BUTTON = (By.XPATH, "//button[text()='Да']")
-    SUCCESS_MODAL = (By.CSS_SELECTOR, "div.Order_ModalHeader__3FDaJ")
-
     @allure.step("Нажимаем кнопку Заказать: {entry}")
     def click_order_button(self, entry):
         if entry == "top":
-            self.driver.find_element(*self.TOP_ORDER_BUTTON).click()
+            self.click(OrderPageLocators.TOP_ORDER_BUTTON)
         elif entry == "bottom":
-            self.driver.find_element(*self.BOTTOM_ORDER_BUTTON).click()
+            self.click(OrderPageLocators.BOTTOM_ORDER_BUTTON)
 
-    @allure.step("Заполняем шаг 1 формы заказа")
-    def fill_first_step(self, name, lastname, address, station, phone):
-        self.driver.find_element(*self.INPUT_NAME).send_keys(name)
-        self.driver.find_element(*self.INPUT_LASTNAME).send_keys(lastname)
-        self.driver.find_element(*self.INPUT_ADDRESS).send_keys(address)
-        self.driver.find_element(*self.INPUT_METRO).click()
-        elements = self.driver.find_elements(*self.METRO_OPTION)
+    @allure.step("Заполняем поля Имя")
+    def fill_name(self, name):
+        self.type(OrderPageLocators.INPUT_NAME, name)
+
+    @allure.step("Заполняем поля Фамилия")
+    def fill_lastname(self, lastname):
+        self.type(OrderPageLocators.INPUT_LASTNAME, lastname)
+
+    @allure.step("Заполняем поле Адресс")
+    def fill_address(self, address):
+        self.type(OrderPageLocators.INPUT_ADDRESS, address)
+    
+    @allure.step("Выбираем станцию метро: {station}")
+    def fill_metro(self, station):
+        metro_input = self.find(OrderPageLocators.INPUT_METRO)
+        self.click(metro_input)
+        elements = self.find_all(OrderPageLocators.METRO_OPTION)
         for el in elements:
             if station.lower() in el.text.lower():
-                el.click()
+                self.click(el)
                 break
-        self.driver.find_element(*self.INPUT_PHONE).send_keys(phone)
-        self.driver.find_element(*self.NEXT_BUTTON).click()
-        
-    @allure.step("Заполняем шаг 2 формы заказа")
-    def fill_second_step(self, date, rent_period_index=1, choose_black=True):
-        self.driver.find_element(*self.INPUT_DATE).send_keys(date)
-        self.driver.find_element(*self.BODY).click()
-        self.driver.find_element(*self.RENT_DROPDOWN).click()
-        self.driver.find_elements(*self.RENT_OPTIONS)[rent_period_index].click()
+
+    @allure.step("Заполняем поле Телефон")
+    def fill_phone(self, phone):
+        self.type(OrderPageLocators.INPUT_PHONE, phone)
+
+    @allure.step("Обьединяем заполнение полей в 1 шаг")
+    def step_one(self, name, lastname, address, station, phone):
+        self.fill_name(name)
+        self.fill_lastname(lastname)
+        self.fill_address(address)
+        self.fill_metro(station)
+        self.fill_phone(phone)
+
+    @allure.step("Кликаем кнопку Далее")
+    def click_next(self):
+        self.click(OrderPageLocators.NEXT_BUTTON)
+  
+    @allure.step('Заполняем дату')
+    def fill_date(self, date):
+        self.type(OrderPageLocators.INPUT_DATE, date)
+
+    @allure.step('Клик по пустому месту')
+    def click_body(self):
+        self.click(OrderPageLocators.BODY)
+
+    @allure.step('Заполняем аренду')
+    def fill_rent(self, rent_period_index=1, choose_black=True):
+        self.click(OrderPageLocators.RENT_DROPDOWN)
+        rent_options = self.find_all(OrderPageLocators.RENT_OPTIONS)
+        rent_options[rent_period_index].click()                       # Не знаю как заставить тут кликнуть по web элементу, чтобы не изменять метод .click :(
         if choose_black:
-            self.driver.find_element(*self.COLOR_BLACK).click()
+            black = self.find(OrderPageLocators.COLOR_BLACK)
+            self.click(black)
         else:
-            self.driver.find_element(*self.COLOR_GREY).click()
-        self.driver.find_elements(*self.ORDER_BUTTON)[1].click()
-        self.driver.find_element(*self.YES_BUTTON).click()
+            grey = self.find(OrderPageLocators.COLOR_GREY)
+            self.click(grey)
+
+    @allure.step('Кликаем по кнопке заказать')
+    def click_order_button_next(self):
+        btns = self.find_all(OrderPageLocators.ORDER_BUTTON)
+        self.wait_clickable(OrderPageLocators.ORDER_BUTTON)
+        btns[1].click()                                              # Тоже самое...
+
+    @allure.step('Кликаем по кнопке подтверждения')
+    def click_yes(self):
+        yes_btn = self.find(OrderPageLocators.YES_BUTTON)
+        self.click(yes_btn)
+
+    @allure.step('Обьединяем заполнение полей в шаг 2')
+    def step_2(self, date, rent_period_index, choose_black=True):
+        self.fill_date(date)
+        self.click_body()
+        self.fill_rent(rent_period_index, choose_black)
 
     def is_success_modal_visible(self):
-        return WebDriverWait(self.driver, 5).until(
-            EC.visibility_of_element_located(*self.SUCCESS_MODAL))
+        return self.wait_visible(OrderPageLocators.SUCCESS_MODAL)
+    
+        
+
     

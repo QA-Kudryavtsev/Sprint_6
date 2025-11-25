@@ -1,12 +1,11 @@
 import pytest
 from selenium import webdriver
-
-@pytest.fixture(scope='session')
-def base_url():
-    return "https://qa-scooter.praktikum-services.ru/"
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
 
 @pytest.fixture(scope='function')
 def driver():
-    driver = webdriver.Firefox()
+    options = FirefoxOptions()
+    options.add_argument("-headless")
+    driver = webdriver.Firefox(options=options)
     yield driver
     driver.quit()
